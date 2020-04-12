@@ -13,7 +13,7 @@ trap finish EXIT
 
 showTitle(){
 	clear
-	echo; echo; echo
+	echo; echo
 	COLUMNS=$(tput cols) 
 	title="TNM SNMP MONITOR"
 	printf "%*s\n" $(((${#title}+$COLUMNS)/2)) "$title"
@@ -60,17 +60,80 @@ Q_D_SystemDetails(){
 QP_D_statistics(){
 	showTitle
 	echo "Querying periodically and displaying the statistics of the interfaces on your system."
-	echo "Enter refresh interval in seconds : "
+
+	ifTotalNum=`snmpget -v 2c -Oqv -c public localhost 1.3.6.1.2.1.2.1.0`
+	echo -e "\nAvailable interfaces :"
+	for (( i=1; i<=$ifTotalNum; i++ ))
+	do
+		ifDescr=`snmpget -v 2c -Oqv -c public localhost 1.3.6.1.2.1.2.2.1.2.$i`
+		echo "$i. $ifDescr"
+	done
+	echo -en "\nSelect interface to query : "
+	read ifIndex
+	re='^[0-9]+$'
+	if ! [[ $ifIndex =~ $re ]] ; then
+		echo "error: Not a number"; 
+		read -n1
+		return
+	elif [[ $ifIndex -gt $ifTotalNum ]] ; then
+		echo selected index out of range
+		read -n1 
+		return
+	fi
+	echo -n "Enter refresh interval in seconds : "
 	read period
+	toggleStats=0
 	while [ 1 ]
 	do
 		showTitle
-		snmpwalk -v 2c -c public localhost 1.3.6.1.2.1.2
+		echo -e "Values are refreshed every $period seconds\n"
+		if [[ $toggleStats == 1 ]] ; then
+			echo "Full Interface Statistics"
+			echo "-------------------------"
+			snmpwalk -v 2c -c public localhost 1.3.6.1.2.1.2
+		else
+			echo "Essential Interface Statistics"
+			echo "------------------------------"
+			ifDescr=`snmpget -v 2c -Oqv -c public localhost 1.3.6.1.2.1.2.2.1.2.$ifIndex`
+			echo -e "Description              (OID : 1.3.6.1.2.1.2.2.1.2.$ifIndex)\t: $ifDescr"
+			ifType=`snmpget -v 2c -Oqv -c public localhost 1.3.6.1.2.1.2.2.1.3.$ifIndex`
+			echo -e "Type                     (OID : 1.3.6.1.2.1.2.2.1.3.$ifIndex)\t: $ifType"
+			ifOperStatus=`snmpget -v 2c -Ovq -c public localhost 1.3.6.1.2.1.2.2.1.8.$ifIndex`
+			echo -e "Operation status         (OID : 1.3.6.1.2.1.2.2.1.8.$ifIndex)\t: $ifOperStatus"
+			echo
+			ifInUcastPkts=`snmpget -v 2c -Ovq -c public localhost 1.3.6.1.2.1.2.2.1.11.$ifIndex`
+			echo -e "Unicast packets - IN     (OID : 1.3.6.1.2.1.2.2.1.11.$ifIndex)\t: $ifInUcastPkts"
+			ifInNUcastPkts=`snmpget -v 2c -Ovq -c public localhost 1.3.6.1.2.1.2.2.1.12.$ifIndex`
+			echo -e "NonUnicast packets - IN  (OID : 1.3.6.1.2.1.2.2.1.12.$ifIndex)\t: $ifInNUcastPkts"
+			ifInDiscards=`snmpget -v 2c -Ovq -c public localhost 1.3.6.1.2.1.2.2.1.13.$ifIndex`
+			echo -e "Discarded packets - IN   (OID : 1.3.6.1.2.1.2.2.1.13.$ifIndex)\t: $ifInDiscards"
+			ifInErrors=`snmpget -v 2c -Ovq -c public localhost 1.3.6.1.2.1.2.2.1.14.$ifIndex`
+			echo -e "Error packets - IN       (OID : 1.3.6.1.2.1.2.2.1.14.$ifIndex)\t: $ifInErrors"
+			echo
+			ifOutUcastPkts=`snmpget -v 2c -Ovq -c public localhost 1.3.6.1.2.1.2.2.1.17.$ifIndex`
+			echo -e "Unicast packets - OUT    (OID : 1.3.6.1.2.1.2.2.1.17.$ifIndex)\t: $ifOutUcastPkts"
+			ifOutNUcastPkts=`snmpget -v 2c -Ovq -c public localhost 1.3.6.1.2.1.2.2.1.18.$ifIndex`
+			echo -e "NonUnicast packets - OUT (OID : 1.3.6.1.2.1.2.2.1.18.$ifIndex)\t: $ifOutNUcastPkts"
+			ifOutDiscards=`snmpget -v 2c -Ovq -c public localhost 1.3.6.1.2.1.2.2.1.19.$ifIndex`
+			echo -e "Discarded packets - OUT  (OID : 1.3.6.1.2.1.2.2.1.19.$ifIndex)\t: $ifOutDiscards"
+			ifOutErrors=`snmpget -v 2c -Ovq -c public localhost 1.3.6.1.2.1.2.2.1.20.$ifIndex`
+			echo -e "Error packets - OUT      (OID : 1.3.6.1.2.1.2.2.1.20.$ifIndex)\t: $ifOutErrors"
+
+		fi
 		echo
-		echo Press any key to go back to menu
-		read -t $period -n1 
+		echo "Press 'T' to toggle between essential interface statistics and full interface statistics"
+		echo Press any other key to go back to menu
+		read -t $period -n1 isTpressed
 		if [[ $? == 0  ]] ; then 
-			break
+			if [[ $isTpressed == 't' || $isTpressed == 'T' ]] ; then
+				if [[ $toggleStats == '0' ]] ; then
+					toggleStats=1
+				else
+					toggleStats=0
+				fi
+			else
+				break
+			fi
 		fi
 	done
 }
