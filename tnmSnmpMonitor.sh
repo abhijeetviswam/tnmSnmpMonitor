@@ -3,6 +3,13 @@
 #Exercise #3: Development of a simple network management application
 #start
 
+finish() {
+	# Your cleanup code here
+	killall tnmSnmpMonitor.sh
+}
+trap finish EXIT
+
+
 selectOption(){
 	case $option in
 		1)
@@ -52,6 +59,25 @@ QP_D_statistics(){
 	done
 }
 
+monitorOID(){
+	parameter=$1
+	threshold=$2
+	while [ 1 ] 
+	do
+		if [[ $parameter != "" ]] ; then
+			paramVal=`snmpget -v 1 -Oqv -c public localhost $parameter`
+			if [[ $paramVal -ge $threshold ]] ; then
+				echo ALERT!!
+				echo "Value of $parameter exceeded the threshold $threshold"
+			fi
+		else 
+			echo Please enter OID to monitor
+			break
+		fi
+		sleep 3
+	done
+}
+
 setThreshold(){
 	echo "set thresholds for any statistical parameter.
 	
@@ -61,27 +87,7 @@ Enter the statistical parameter:"
 	echo "Enter threshold:"
 	read threshold
 	echo "Entered threshold is :$threshold"
-	while [ 1 ]
-	do
-		uptime=`snmpget -v 1 -c public localhost 1.3.6.1.2.1.1.3.0 | cut -d')' -f2`
-		cpuIdle=`snmpget -v 1 -On -c public localhost 1.3.6.1.4.1.2021.11.11.0 | cut -d':' -f2`
-		cpuSys=`snmpget -v 1 -On -c public localhost 1.3.6.1.4.1.2021.11.10.0 | cut -d':' -f2`
-		cpuUser=`snmpget -v 1 -On -c public localhost 1.3.6.1.4.1.2021.11.9.0 | cut -d':' -f2`
-		
-		if [[ $parameter != "" ]] ; then
-			paramVal=`snmpget -v 1 -On -c public localhost $parameter | cut -d':' -f2`
-			if [[ $paramVal -ge $threshold ]] ; then
-				echo "ALERT!! ALERT!! ALERT!!
-				Uptime = $uptime
-				CPU User = $cpuUser%
-				CPU System = $cpuSys%
-				CPU Idle = $cpuIdle%
-				
-				"
-			fi
-		fi
-		sleep 3;
-	done
+	monitorOID $parameter $threshold &
 }
 
 
