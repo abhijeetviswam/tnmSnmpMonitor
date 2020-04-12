@@ -5,9 +5,21 @@
 
 finish() {
 	# Your cleanup code here
+	echo
+	echo "Thanks for using TNM SNMP MONITOR"
 	killall tnmSnmpMonitor.sh
 }
 trap finish EXIT
+
+showTitle(){
+	clear
+	echo; echo; echo
+	COLUMNS=$(tput cols) 
+	title="TNM SNMP MONITOR"
+	printf "%*s\n" $(((${#title}+$COLUMNS)/2)) "$title"
+	title="================"
+	printf "%*s\n" $(((${#title}+$COLUMNS)/2)) "$title"
+}
 
 
 selectOption(){
@@ -29,6 +41,7 @@ selectOption(){
 
 
 Q_D_SystemDetails(){
+	showTitle
 	echo "Querying and displaying systems details."
 	uptime=`snmpget -v 1 -c public localhost 1.3.6.1.2.1.1.3.0 | cut -d')' -f2`
 	echo "Uptime = $uptime"
@@ -45,13 +58,16 @@ Q_D_SystemDetails(){
 }
 
 QP_D_statistics(){
+	showTitle
 	echo "Querying periodically and displaying the statistics of the interfaces on your system."
 	echo "Enter refresh interval in seconds : "
 	read period
 	while [ 1 ]
 	do
-		clear
-		echo Press any key to exit
+		showTitle
+		snmpwalk -v 2c -c public localhost 1.3.6.1.2.1.2
+		echo
+		echo Press any key to go back to menu
 		read -t $period -n1 
 		if [[ $? == 0  ]] ; then 
 			break
@@ -79,40 +95,34 @@ monitorOID(){
 }
 
 setThreshold(){
-	echo "set thresholds for any statistical parameter.
+	showTitle
+	echo -n "Set thresholds for any statistical parameter.
 	
-Enter the statistical parameter:"
+Enter the statistical parameter : "
 	read parameter
-	echo "Entered statistical parameter is: $parameter"
-	echo "Enter threshold:"
+	echo -n "Enter threshold for Alert : "
 	read threshold
-	echo "Entered threshold is :$threshold"
 	monitorOID $parameter $threshold &
+	echo "Parameter $parameter is being monitored. Press any key to return to main menu"
+	read -n1
 }
-
 
 while [ 1 ]
 do
-	clear
-	echo; echo; echo
-	COLUMNS=$(tput cols) 
-	title="TNM SNMP MONITOR"
-	printf "%*s\n" $(((${#title}+$COLUMNS)/2)) "$title"
-	title="================"
-	printf "%*s\n" $(((${#title}+$COLUMNS)/2)) "$title"
+	showTitle
 	echo "
 	Choose the options from the list and enter the respective number:
 		1. Show system details
 		2. Monitor interface statistics
 		3. Setup threshold alert
-		4. Quit application"
+
+		Press 'Q' to quit application"
 
 	read -n1 option
 	echo
 	if [[ $option == 1 || $option == 2 || $option == 3 ]] ; then
 		selectOption
-	elif [[ $option == 4  ]] ; then
-		echo "Thanks for using TNM SNMP MONITOR"
+	elif [[ $option == 'q' || $option == 'Q'  ]] ; then
 		break
 	else
 		echo "!!Invalid Option!!..Choose the right option:"
