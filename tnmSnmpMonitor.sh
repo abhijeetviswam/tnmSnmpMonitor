@@ -197,6 +197,13 @@ setThreshold(){
 	
 Enter the statistical parameter : "
 	read parameter
+	output=`snmpget -v 1 -Oqv -c public localhost $parameter 2>/dev/null`
+	if [[ $? != 0 ]] ; then
+		echo "Invalid OID. Please enter OID correctly (e.g.: 1.3.6.1.2.1.1.1.0)"
+		read -n1
+		setThreshold
+		return
+	fi
 	echo -n "Enter threshold for Alert : "
 	read threshold
 	monitorOID $parameter $threshold &
