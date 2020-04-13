@@ -1,18 +1,40 @@
-#!/bin/bash
+#! /bin/bash
 #TNM Assignment "GROUP CA"
 #Exercise #3: Development of a simple network management application
 #start
 
 finish() {
 	# Your cleanup code here
+	showTitle
 	echo
-	echo "Thanks for using TNM SNMP MONITOR"
-	killall tnmSnmpMonitor.sh
+	COLUMNS=$(tput cols)
+	credits="*************************************"
+	printf "%*s\n" $(((${#credits}+$COLUMNS)/2)) "$credits"
+	credits="* Thanks for using TNM SNMP MONITOR *"
+	printf "%*s\n" $(((${#credits}+$COLUMNS)/2)) "$credits"
+	credits="*************************************"
+	printf "%*s\n" $(((${#credits}+$COLUMNS)/2)) "$credits"
+	credits="*           Developed By            *"
+	printf "%*s\n" $(((${#credits}+$COLUMNS)/2)) "$credits"
+	credits="*   Abhijeet Viswam - 2019HT12228   *"
+	printf "%*s\n" $(((${#credits}+$COLUMNS)/2)) "$credits"
+	credits="*   Vella Venkaesh  - 2019HT12186   *"
+	printf "%*s\n" $(((${#credits}+$COLUMNS)/2)) "$credits"
+	credits="*   Rahul Kushwaha  - 2019HT66508   *"
+	printf "%*s\n" $(((${#credits}+$COLUMNS)/2)) "$credits"
+	credits="*************************************"
+	printf "%*s\n" $(((${#credits}+$COLUMNS)/2)) "$credits"
+
+	sleep 5
+	pkill -s 0
 }
+
+#Cleanup on exit
 trap finish EXIT
 
 showTitle(){
-	clear
+	#clear screen and prevent scrollback
+	clear && printf '\e[3J'
 	echo; echo
 	COLUMNS=$(tput cols) 
 	title="TNM SNMP MONITOR"
@@ -71,7 +93,10 @@ QP_D_statistics(){
 	echo -en "\nSelect interface to query : "
 	read ifIndex
 	re='^[0-9]+$'
-	if ! [[ $ifIndex =~ $re ]] ; then
+	if [[ $ifIndex == "" ]] ; then
+		echo -e "No input provided. Selecting interface numbered 1 by default\n"
+		ifIndex=1
+	elif ! [[ $ifIndex =~ $re ]] ; then
 		echo "error: Not a number"; 
 		read -n1
 		return
@@ -80,8 +105,11 @@ QP_D_statistics(){
 		read -n1 
 		return
 	fi
-	echo -n "Enter refresh interval in seconds : "
+	echo -n "Enter refresh interval in seconds (default 10 seconds) : "
 	read period
+	if [[ $period == "" ]] ; then 
+		period=10
+	fi
 	toggleStats=0
 	while [ 1 ]
 	do
