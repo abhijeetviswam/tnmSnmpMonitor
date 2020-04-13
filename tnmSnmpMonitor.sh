@@ -42,16 +42,22 @@ selectOption(){
 
 Q_D_SystemDetails(){
 	showTitle
-	echo "Querying and displaying systems details."
-	uptime=`snmpget -v 1 -c public localhost 1.3.6.1.2.1.1.3.0 | cut -d')' -f2`
-	echo "Uptime = $uptime"
-	cpuIdle=`snmpget -v 1 -On -c public localhost 1.3.6.1.4.1.2021.11.11.0 | cut -d':' -f2`
-	cpuSys=`snmpget -v 1 -On -c public localhost 1.3.6.1.4.1.2021.11.10.0 | cut -d':' -f2`
-	cpuUser=`snmpget -v 1 -On -c public localhost 1.3.6.1.4.1.2021.11.9.0 | cut -d':' -f2`
-	echo "CPU User = $cpuUser%"
-	echo "CPU System = $cpuSys%"
-	echo "CPU Idle = $cpuIdle%"
-
+	echo -e "Querying and displaying systems details.\n"
+	
+	sysDescr=`snmpget -v 1 -Oqv -c public localhost 1.3.6.1.2.1.1.1.0 2>/dev/null`
+	sysObjectId=`snmpget -v 1 -Oqvn -c public localhost 1.3.6.1.2.1.1.2.0 2>/dev/null`
+	sysUptime=`snmpget -v 1 -Oqv -c public localhost 1.3.6.1.2.1.1.3.0 2>/dev/null`
+	sysContact=`snmpget -v 1 -Oqv -c public localhost 1.3.6.1.2.1.1.4.0 2>/dev/null`
+	sysName=`snmpget -v 1 -Oqv -c public localhost 1.3.6.1.2.1.1.5.0 2>/dev/null`
+	sysLocation=`snmpget -v 1 -Oqv -c public localhost 1.3.6.1.2.1.1.6.0 2>/dev/null`
+	sysServices=`snmpget -v 1 -Oqv -c public localhost 1.3.6.1.2.1.1.7.0 2>/dev/null`
+	echo -e "System Description\tOID 1.3.6.1.2.1.1.1.0\t: $sysDescr"
+	echo -e "sysObjectId\t\tOID 1.3.6.1.2.1.1.2.0\t: $sysObjectId"
+	echo -e "sysUptime\t\tOID 1.3.6.1.2.1.1.3.0\t: $sysUptime"
+	echo -e "sysContact\t\tOID 1.3.6.1.2.1.1.4.0\t: $sysContact"
+	echo -e "sysName\t\t\tOID 1.3.6.1.2.1.1.5.0\t: $sysName"
+	echo -e "sysLocation\t\tOID 1.3.6.1.2.1.1.6.0\t: $sysLocation"
+	echo -e "sysServices\t\tOID 1.3.6.1.2.1.1.7.0\t: $sysServices"	
 	echo
 	echo "Press any key to go back to menu" 
 	read -n1
