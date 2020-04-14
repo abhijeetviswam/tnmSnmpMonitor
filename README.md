@@ -36,8 +36,10 @@ Please follow the following instructions to set up snmpd correctly in your syste
 	```
 ### Instructions for using the App
 We developed the app as an executable bash script. No compilation is required.
-- Execute the script `tnmSnmpMonitor.sh`
+- Clone the repo and execute the script `tnmSnmpMonitor.sh`
 	```bash
+	git clone https://github.com/abhijeetviswam/tnmSnmpMonitor.git
+	cd tnmSnmpMonitor
 	./tnmSnmpMonitor.sh
 	```
 - Select the necessary option from the menu\
