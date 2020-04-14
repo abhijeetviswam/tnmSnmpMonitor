@@ -18,7 +18,7 @@ finish() {
 	printf "%*s\n" $(((${#credits}+$COLUMNS)/2)) "$credits"
 	credits="*   Abhijeet Viswam - 2019HT12228   *"
 	printf "%*s\n" $(((${#credits}+$COLUMNS)/2)) "$credits"
-	credits="*   Vella Venkaesh  - 2019HT12186   *"
+	credits="*   Vella Venkatesh - 2019HT12186   *"
 	printf "%*s\n" $(((${#credits}+$COLUMNS)/2)) "$credits"
 	credits="*   Rahul Kushwaha  - 2019HT66508   *"
 	printf "%*s\n" $(((${#credits}+$COLUMNS)/2)) "$credits"
@@ -31,6 +31,7 @@ finish() {
 
 #Cleanup on exit
 trap finish EXIT
+
 
 showTitle(){
 	#clear screen and prevent scrollback
@@ -52,8 +53,11 @@ selectOption(){
 		2)
 			QP_D_statistics
 			;;
-		3)
-			setThreshold
+		4)
+			setThresholdForInterfaceStatisticalParam
+			;;
+		5)
+			setThresholdAnyStatisticalParam
 			;;
 		*)
 			echo "!!invalid option!!"
@@ -180,8 +184,10 @@ monitorOID(){
 		if [[ $parameter != "" ]] ; then
 			paramVal=`snmpget -v 1 -Oqv -c public localhost $parameter`
 			if [[ $paramVal -ge $threshold ]] ; then
+			
 				echo ALERT!!
-				echo "Value of $parameter exceeded the threshold $threshold"
+				echo "Value of $parameter exceeded the threshold $threshold:CurrentValue = $paramVal"
+				exit
 			fi
 		else 
 			echo Please enter OID to monitor
@@ -191,18 +197,82 @@ monitorOID(){
 	done
 }
 
-setThreshold(){
+setThresholdForInterfaceStatisticalParam(){
 	showTitle
-	echo -n "Set thresholds for any statistical parameter.
+	echo -n "Set thresholds for Interfaces statistical parameter."
+	ifTotalNum=`snmpget -v 2c -Oqv -c public localhost 1.3.6.1.2.1.2.1.0`
+	echo -e "\nAvailable interfaces :"
+	for (( i=1; i<=$ifTotalNum; i++ ))
+	do
+		ifDescr=`snmpget -v 2c -Oqv -c public localhost 1.3.6.1.2.1.2.2.1.2.$i`
+		echo "$i. $ifDescr"
+	done
+	echo -en "\nSelect interface to set threshold : "
+	read ifIndex
+	re='^[0-9]+$'
+	if [[ $ifIndex == "" ]] ; then
+		echo -e "No input provided. Selecting interface numbered 1 by default\n"
+		ifIndex=1
+	elif ! [[ $ifIndex =~ $re ]] ; then
+		echo "error: Not a number"; 
+		read -n1
+		return
+	elif [[ $ifIndex -gt $ifTotalNum ]] ; then
+		echo selected index out of range
+		read -n1 
+		return
+	fi
+	
+		showTitle
+			echo "Essential Interface Statistics"
+			echo "------------------------------"
+			ifDescr=`snmpget -v 2c -Oqv -c public localhost 1.3.6.1.2.1.2.2.1.2.$ifIndex`
+			echo -e "Description              (OID : 1.3.6.1.2.1.2.2.1.2.$ifIndex)\t: $ifDescr"
+			ifType=`snmpget -v 2c -Oqv -c public localhost 1.3.6.1.2.1.2.2.1.3.$ifIndex`
+			echo -e "Type                     (OID : 1.3.6.1.2.1.2.2.1.3.$ifIndex)\t: $ifType"
+			ifOperStatus=`snmpget -v 2c -Ovq -c public localhost 1.3.6.1.2.1.2.2.1.8.$ifIndex`
+			echo -e "Operation status         (OID : 1.3.6.1.2.1.2.2.1.8.$ifIndex)\t: $ifOperStatus"
+			echo
+			ifInUcastPkts=`snmpget -v 2c -Ovq -c public localhost 1.3.6.1.2.1.2.2.1.11.$ifIndex`
+			echo -e "Unicast packets - IN     (OID : 1.3.6.1.2.1.2.2.1.11.$ifIndex)\t: $ifInUcastPkts"
+			ifInNUcastPkts=`snmpget -v 2c -Ovq -c public localhost 1.3.6.1.2.1.2.2.1.12.$ifIndex`
+			echo -e "NonUnicast packets - IN  (OID : 1.3.6.1.2.1.2.2.1.12.$ifIndex)\t: $ifInNUcastPkts"
+			ifInDiscards=`snmpget -v 2c -Ovq -c public localhost 1.3.6.1.2.1.2.2.1.13.$ifIndex`
+			echo -e "Discarded packets - IN   (OID : 1.3.6.1.2.1.2.2.1.13.$ifIndex)\t: $ifInDiscards"
+			ifInErrors=`snmpget -v 2c -Ovq -c public localhost 1.3.6.1.2.1.2.2.1.14.$ifIndex`
+			echo -e "Error packets - IN       (OID : 1.3.6.1.2.1.2.2.1.14.$ifIndex)\t: $ifInErrors"
+			echo
+			ifOutUcastPkts=`snmpget -v 2c -Ovq -c public localhost 1.3.6.1.2.1.2.2.1.17.$ifIndex`
+			echo -e "Unicast packets - OUT    (OID : 1.3.6.1.2.1.2.2.1.17.$ifIndex)\t: $ifOutUcastPkts"
+			ifOutNUcastPkts=`snmpget -v 2c -Ovq -c public localhost 1.3.6.1.2.1.2.2.1.18.$ifIndex`
+			echo -e "NonUnicast packets - OUT (OID : 1.3.6.1.2.1.2.2.1.18.$ifIndex)\t: $ifOutNUcastPkts"
+			ifOutDiscards=`snmpget -v 2c -Ovq -c public localhost 1.3.6.1.2.1.2.2.1.19.$ifIndex`
+			echo -e "Discarded packets - OUT  (OID : 1.3.6.1.2.1.2.2.1.19.$ifIndex)\t: $ifOutDiscards"
+			ifOutErrors=`snmpget -v 2c -Ovq -c public localhost 1.3.6.1.2.1.2.2.1.20.$ifIndex`
+			echo -e "Error packets - OUT      (OID : 1.3.6.1.2.1.2.2.1.20.$ifIndex)\t: $ifOutErrors"
+			
+		setThresholdAnyStatisticalParam
+
+}
+
+setThresholdAnyStatisticalParam(){
+	echo
+	echo -n "Set thresholds for statistical parameter.
 	
 Enter the statistical parameter : "
 	read parameter
 	output=`snmpget -v 1 -Oqv -c public localhost $parameter 2>/dev/null`
 	if [[ $? != 0 ]] ; then
-		echo "Invalid OID. Please enter OID correctly (e.g.: 1.3.6.1.2.1.1.1.0)"
-		read -n1
-		setThreshold
-		return
+		echo "Invalid OID.
+		1. Please enter Integer statistical OID correctly (e.g.: 1.3.6.1.2.1.1.1.0).
+		or press any other key to go to Main Menu"
+		read -n1 option
+		if [[ $option == 1 ]] ; then
+		setThresholdAnyStatisticalParam
+		else
+		GetUserInput
+		exit
+		fi
 	fi
 	echo -n "Enter threshold for Alert : "
 	read threshold
@@ -211,6 +281,7 @@ Enter the statistical parameter : "
 	read -n1
 }
 
+GetUserInput(){
 while [ 1 ]
 do
 	showTitle
@@ -225,6 +296,20 @@ do
 	read -n1 option
 	echo
 	if [[ $option == 1 || $option == 2 || $option == 3 ]] ; then
+		if [[ $option == 3 ]] ; then
+			echo "Setting threshold for statistical parameter
+			Choose the options from the list and enter the respective number to :
+			1. Setting threshold for interface statistical parameter
+			2. Setting threshold for any integer oriented statistical parameter
+			3. GoTo Main Menu"
+			read -n1 subOption
+			if [[ $subOption == 1 || $subOption == 2 ]] ; then
+				option=$((option+subOption))
+			else
+				echo "!!Redirecting to Main Menu .. Choose the right option:"
+				continue
+			fi
+		fi
 		selectOption
 	elif [[ $option == 'q' || $option == 'Q'  ]] ; then
 		break
@@ -232,3 +317,5 @@ do
 		echo "!!Invalid Option!!..Choose the right option:"
 	fi
 done
+}
+GetUserInput
