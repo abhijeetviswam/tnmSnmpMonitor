@@ -21,7 +21,7 @@ Please follow the following instructions to set up snmpd correctly in your syste
 	```bash
     rocommunity public
     ```
-4.	Download and install SNMP MIB files
+4.  Download and install SNMP MIB files
 	```bash
 	sudo apt-get install snmp-mibs-downloader
 	sudo download-mibs
@@ -33,6 +33,10 @@ Please follow the following instructions to set up snmpd correctly in your syste
 6. After restarting SNMP service, perform a local test to verify that SNMP is running:
 	```bash
 	snmpwalk -v 1 -c public localhost sysname
+	```
+7. Install `whiptail` for managing terminal Alerts
+	```bash
+	sudo apt-get install whiptail
 	```
 ### Instructions for using the App
 We developed the app as an executable bash script. No compilation is required.
