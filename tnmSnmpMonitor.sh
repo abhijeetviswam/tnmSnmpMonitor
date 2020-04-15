@@ -184,9 +184,15 @@ monitorOID(){
 		if [[ $parameter != "" ]] ; then
 			paramVal=`snmpget -v 1 -Oqv -c public localhost $parameter`
 			if [[ $paramVal -ge $threshold ]] ; then
-			
-				echo ALERT!!
-				echo "Value of $parameter exceeded the threshold $threshold:CurrentValue = $paramVal"
+				command -v whiptail >/dev/null
+				whipAvailable=$?
+				if [[ !whipAvailable ]] ; then 
+					TERM=vt220 whiptail --title "ALERT!!!" --infobox "Value of $parameter exceeded the threshold $threshold\nCurrentValue = $paramVal\nPress any key to continue" 10 0 
+				else
+					echo
+					echo ALERT!!
+					echo "Value of $parameter exceeded the threshold $threshold:CurrentValue = $paramVal"
+				fi
 				exit
 			fi
 		else 
@@ -269,9 +275,10 @@ Enter the statistical parameter : "
 		read -n1 option
 		if [[ $option == 1 ]] ; then
 		setThresholdAnyStatisticalParam
+		return
 		else
 		GetUserInput
-		exit
+		return
 		fi
 	fi
 	echo -n "Enter threshold for Alert : "
